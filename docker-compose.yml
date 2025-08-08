@@ -1,0 +1,121 @@
+
+services:
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    image: bitnami/kafka:3.6.1
+    container_name: kafka
+    environment:
+      - KAFKA_ENABLE_KRAFT=no                  # disable KRaft
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - BITNAMI_DEBUG=true
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT    
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+      
+  kafka-setup:
+    image: bitnami/kafka:3.6.1
+    depends_on:
+      - kafka
+    entrypoint: ["/bin/sh","-c"]
+    command: |
+      "
+      sleep 10
+      echo 'Listing topics:'
+      /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+      echo 'Creating topics order-placed and order-delivered...'
+      /opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists --topic order-placed --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+      /opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists --topic order-delivered --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+      /opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists --topic b2c-invoice-created --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+      echo 'Topics created.'
+      sleep 5
+      "
+    restart: "no"
+  # order-service:
+  #   build: ./order-service
+  #   container_name: order-service
+  #   depends_on:
+  #     - kafka
+  #   environment:
+  #     - KAFKA_BROKER=kafka:9092
+  #   ports:
+  #     - "3000:3000"
+
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    env_file:
+          - ./order-service/.env
+    # environment:
+    #   - KAFKA_BROKER=kafka:9092
+    #   # - KAFKA_TOPIC=create-order
+    ports:
+      - "4000:4000"
+    depends_on:
+      - kafka
+
+
+  # fe-app:
+  #   build:
+  #     context: ./FE-service
+  #     dockerfile: Dockerfile
+  #   container_name: fe-app
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - PORT=3000
+  #   volumes:
+  #     - ./FE-service:/app
+  #     # - /app/node_modules
+  #   # restart: unless-stopped
+
+
+  bc-invoice-service:
+    build:
+      context: ./b2c-invoice-service
+      dockerfile: Dockerfile
+    container_name: bc-invoice-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+    volumes:
+      - ./b2c-invoice-service:/app
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+    volumes:
+      - ./notification-service:/app
