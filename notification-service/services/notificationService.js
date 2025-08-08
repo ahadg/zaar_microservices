@@ -1,86 +1,83 @@
 // File: services/notificationService.js
-
-const Invoice = require("../models/b2cInvoiceModel");
-const nodemailer = require("nodemailer");
 require("dotenv").config();
+const Invoice = require("../models/b2cInvoiceModel");
+const EmailTemplate = require("../models/emailTemplates");
+const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP__HOST,
-  port: parseInt(process.env.SMTP__PORT),
-  secure: process.env.SMTP__SECURE === "true", // true if using SSL (port 465 or 456)
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: true, // port 465 requires secure: true
   auth: {
-    user: process.env.SMTP__USER,
-    pass: process.env.SMTP__PASS,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
 });
-
-console.log("process.env.SMTP__HOST",{
-  host: process.env.SMTP__HOST,
-  port: parseInt(process.env.SMTP__PORT),
-  secure: process.env.SMTP__SECURE === "true", // true if using SSL (port 465 or 456)
-  auth: {
-    user: process.env.SMTP__USER,
-    pass: process.env.SMTP__PASS,
-  },
-})
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("SMTP connection failed:", error);
+  } else {
+    console.log("SMTP server is ready to take messages");
+  }
+});
 
 const sendNotification = async (eventType, data) => {
   try {
-    console.log(`🔔 Event Received: ${eventType}`);
-    console.log("📦 Payload:", data);
-
-    if (!data.inv_id) {
-      console.error("❌ Missing inv_id in payload");
-      return { success: false, error: "Missing inv_id in payload" };
-    }
-
-    // 1. Fetch invoice from MongoDB
-    const invoice = await Invoice.findOne({ inv_id: data.inv_id });
-    console.log("invoice",invoice)
+    // 1. Fetch invoice
+    const invoice = await Invoice.findOne({ invoiceId: data.invoiceId });
     if (!invoice) {
-      console.error("❌ Invoice not found for inv_id:", data.inv_id);
+      console.error("Invoice not found for object_number:", data.invoiceId);
       return { success: false, error: "Invoice not found" };
     }
+    console.log("invoice",invoice)
 
-    const customerName = `${invoice.customer_first_name} ${invoice.customer_last_name}`;
-    const customerEmail = invoice.customer_email;
-    const invoiceAmount = invoice.total_price;
-    const invoiceNumber = invoice.order_number;
+    // 2. Fetch email template by eventType
+    console.log("objjj",{ name: eventType, active: true })
+    const template = await EmailTemplate.findOne({ name: eventType, active: true });
+    if (!template) {
+      console.error(`No active email template found for eventType: ${eventType}`);
+      return { success: false, error: "Email template not found" };
+    }
 
-    // 2. Generate HTML
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>Hello ${customerName},</h2>
-        <p>Thanks for your order. Here's your invoice summary:</p>
-        <table style="border-collapse: collapse;">
-          <tr><td><strong>Invoice #:</strong></td><td>${invoiceNumber}</td></tr>
-          <tr><td><strong>Total:</strong></td><td>$${invoiceAmount.toFixed(2)}</td></tr>
-          <tr><td><strong>Status:</strong></td><td>${invoice.status}</td></tr>
-        </table>
-        <br>
-        <p>We're here if you have any questions.</p>
-        <p>– InvoiceX Team</p>
-      </div>
-    `;
+    // 3. Extract required data
+    const customerName = `${invoice.clientFirstName} ${invoice.clientLastName}`;
+    const customerEmail = invoice.clientEmail;
+    const invoiceAmount = invoice.totalAmt;
+    const invoiceNumber = data.invoiceId;
+    const invoiceStatus = invoice.status;
+    const dueDate = invoice.dueDate;
 
-    // 3. Send email
+    // 4. Manual placeholder replacement
+    let htmlContent = template.templateBody;
+    htmlContent = htmlContent.replace(/{{customerName}}/g, customerName);
+    htmlContent = htmlContent.replace(/{{customerEmail}}/g, customerEmail);
+    htmlContent = htmlContent.replace(/{{invoiceAmount}}/g, invoiceAmount);
+    htmlContent = htmlContent.replace(/{{invoiceNumber}}/g, invoiceNumber);
+    htmlContent = htmlContent.replace(/{{invoice.status}}/g, invoiceStatus);
+    htmlContent = htmlContent.replace(/{{dueDate}}/g, dueDate || "");
+
+    // 5. Send email
     const mailOptions = {
-      from: `"InvoiceX" <${process.env.SMTP__USER}>`,
+      from: `"InvoiceX" <${process.env.SMTP_USER}>`,
       to: customerEmail,
       subject: `Invoice #${invoiceNumber}`,
       html: htmlContent,
+      attachments: [
+        {
+          filename: `Invoice_${invoiceNumber}.pdf`,
+          path: `public/pdfs/INV_8.pdf`, // Assumes filename matches invoiceId
+          contentType: 'application/pdf',
+        },
+      ],
     };
+    
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`📧 Email sent: ${info.messageId}`);
-
-    // 4. Simulate other channels
-    console.log(`📱 Simulated SMS to ${invoice.customer_phone}`);
-    console.log(`💬 Simulated WhatsApp to ${data.customer_whatsapp || invoice.customer_phone}`);
+    console.log(`Email sent: ${info.messageId}`);
 
     return { success: true, eventType };
   } catch (err) {
-    console.error("🔥 Error in sendNotification:", err);
+    console.error("Error in sendNotification:", err);
     return { success: false, error: err.message };
   }
 };

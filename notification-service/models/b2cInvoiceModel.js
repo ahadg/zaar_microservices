@@ -1,60 +1,152 @@
 const mongoose = require('mongoose');
 
-const invoiceSchema = new mongoose.Schema({
-  billing_address1: { type: String, required: true },
-  billing_city: { type: String, required: true },
-  billing_country: { type: String, required: true },
-  billing_province: { type: String, required: true },
-  billing_zip: { type: Number, required: true },
+const LineItemSchema = new mongoose.Schema({
+  discount: String,
+  tax: String,
+  isDiscountPercent: Boolean,
+  isTaxPercentage: Boolean,
+  item: String,
+  additionalDetails: String,
+  quantity: String,
+  quantityUnit: String,
+  unitPrice: String,
+  amount: String
+}, { _id: false });
 
-  create_date: { type: Date, required: true },
-  created_at: { type: Date, required: true },
+const CurrencySchema = new mongoose.Schema({
+  _id: String,
+  symbol: String,
+  code: String,
+  type: String
+}, { _id: false });
 
-  currency: { type: String, required: true },
+const FundReceptionSchema = new mongoose.Schema({
+  type: String,
+  accountNumber: String,
+  accountTitle: String,
+  bankName: String,
+  bankAddress: String,
+  iBAN: String,
+  branchCode: String
+}, { _id: false });
 
-  customer_address1: { type: String, required: true },
-  customer_city: { type: String, required: true },
-  customer_country: { type: String, required: true },
-  customer_email: { type: String, required: true },
-  customer_first_name: { type: String, required: true },
-  customer_id: { type: Number, required: true },
-  customer_last_name: { type: String, required: true },
-  customer_phone: { type: String, required: true },
-  customer_province: { type: String, required: true },
-  customer_zip: { type: Number, required: true },
+const FinanceStatusSchema = new mongoose.Schema({
+  attachments: [mongoose.Schema.Types.Mixed]
+}, { _id: false });
 
-  due_date: { type: Date, required: true },
+const FinanceStatusArraySchema = new mongoose.Schema({
+  inProgress: FinanceStatusSchema,
+  approved: FinanceStatusSchema,
+  rejected: FinanceStatusSchema,
+  disbursed: FinanceStatusSchema,
+  rePayment: FinanceStatusSchema,
+  isDefault: FinanceStatusSchema
+}, { _id: false });
 
-  fulfillment_status: { type: String, required: true },
-  id: { type: Number, required: true },
-  inv_id: { type: String, required: true },
-  order_number: { type: Number, required: true },
+const FinancingScoreSchema = new mongoose.Schema({
+  basicInfoScore: Number,
+  filerScore: Number,
+  guarantorScore: Number,
+  repaymentHistoryScore: Number,
+  biometricVerificationScore: Number,
+  postDatedChequeScore: Number,
+  minimumDaysScore: Number,
+  totalCreditScore: String,
+  remainingAmount: Number
+}, { _id: false });
 
-  product_id: { type: Number, required: true },
-  product_price: { type: Number, required: true },
-  product_quantity: { type: Number, required: true },
-  product_sku: { type: String, required: true },
-  product_tax_amount: { type: Number, required: true },
-  product_tax_rate: { type: Number, required: true },
-  product_title: { type: String, required: true },
-  product_variant: { type: String, required: true },
+const InvoiceFinanceObjSchema = new mongoose.Schema({
+  financingScore: FinancingScoreSchema,
+  advanceKycLoan: [mongoose.Schema.Types.Mixed],
+  documents: [mongoose.Schema.Types.Mixed]
+}, { _id: false });
 
-  shipping_address1: { type: String, required: true },
-  shipping_city: { type: String, required: true },
-  shipping_country: { type: String, required: true },
-  shipping_province: { type: String, required: true },
-  shipping_zip: { type: Number, required: true },
+const InvoiceSchema = new mongoose.Schema({
+  currency: CurrencySchema,
+  fundReception: FundReceptionSchema,
+  financeStatusarray: FinanceStatusArraySchema,
+  invoiceFinanceObj: InvoiceFinanceObjSchema,
+  acknowledge: {
+    attachments: [mongoose.Schema.Types.Mixed]
+  },
+  isBill: Boolean,
+  createdWithoutLogin: Boolean,
+  sentInvoicesDeleted: Boolean,
+  receivedInvoicesDeleted: Boolean,
+  ack: Boolean,
+  outstanding: Boolean,
+  draft: Boolean,
+  rejected: Boolean,
+  finance: Boolean,
+  financeCheck: Boolean,
+  financeRequestAction: String,
+  voided: Boolean,
+  clientPaid: Boolean,
+  paymentConfirmation: Boolean,
+  paid: Boolean,
+  vendorTaxNumber: String,
+  atCreation: Boolean,
+  atFinance: Boolean,
+  atAck: Boolean,
+  atVoid: Boolean,
+  atReject: Boolean,
+  atPaid: Boolean,
+  atConfirmation: Boolean,
+  mailLog: Boolean,
+  invoiceTags: [String],
+  lines: [LineItemSchema],
+  financeId: [String],
+  invoiceId: String,
+  previousInvoiceHash: String,
+  creationDate: Date,
+  invDate: Date,
+  invoiceRef: String,
+  vendorId: String,
+  actulUserIdForBackend: String,
+  vendorLoginType: String,
+  clientLoginType: String,
+  vendorMobileNumber: String,
+  vendorMobileNumberHash: String,
+  vendorEmail: String,
+  vendorEmailHash: String,
+  vendorName: String,
+  clientFirstName: String,
+  clientLastName: String,
+  clientEmail: String,
+  clientMobileNumber: String,
+  clientMobileNumberHash: String,
+  clientEmailHash: String,
+  dueDate: Date,
+  netAmt: Number,
+  description: String,
+  clientCountry: String,
+  clientCity: String,
+  clientDistrict: String,
+  clientStreetName: String,
+  clientBusinessName: String,
+  clientBuldingNo: String,
+  clientPostalCode: String,
+  clientAdditionalNo: String,
+  clientVATNumber: String,
+  clientOtherBuyerId: String,
+  baseCurrency: String,
+  converstionRate: Number,
+  totalAmt: String,
+  totalTaxAmt: String,
+  totalDiscountAmt: Number,
+  action: String,
+  netAmtFC: Number,
+  totalAmtFC: Number,
+  totalTaxAmtFC: Number,
+  totalDiscountAmtFC: Number,
+  netAmtCC: Number,
+  invoiceHash: String,
+  invoiceTaxType: String,
+  supplyDate: Date,
+  mail_msg_id: String,
+  source: String,
+  status: String,
+  delivery_status:String,
+}, { timestamps: true });
 
-  status: { type: String, required: true },
-
-  subtotal_price: { type: Number, required: true },
-  total_price: { type: Number, required: true },
-  total_tax: { type: Number, required: true },
-
-  vendor: { type: String, required: true },
-  vendor_id: { type: String, required: true }
-});
-
-const Invoice = mongoose.model('b2cinvoice', invoiceSchema);
-
-module.exports = Invoice;
+module.exports = mongoose.model('b2cinvoices', InvoiceSchema);
