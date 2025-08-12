@@ -49,8 +49,14 @@ app.get("/", async (req, res) => {
 // Creating the Google auth
 const vendorRoutes = require("./routes/vendorRoutes");
 const invoiceRoutes = require("./routes/invRoutes");
+const policyRoutes = require("./routes/policyRoutes");
+const comissionRoutes = require("./routes/comissionRoutes")
+const itemRoutes = require("./routes/itemRoutes");
 app.use("/api", vendorRoutes);
 app.use("/api", invoiceRoutes);
+app.use("/api", policyRoutes);
+app.use("/api", comissionRoutes);
+app.use("/api", itemRoutes);
 app.use(
   cookieSession({
     name: "session-auth",
@@ -74,7 +80,7 @@ app.get("/failed", (req, res) => res.send("You Failed to log in!"));
 // );
 
 // app.get(
-//   "/google/callback",
+//   "/google/callback",true
 //   passport.authenticate("google", { failureRedirect: "/failed" }),
 //   function (req, res) {
 //     // Successful authentication, redirect home.

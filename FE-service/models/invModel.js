@@ -46,7 +46,9 @@ const InvoiceSchema = new mongoose.Schema({
   customer: { type: CustomerSchema, required: true },
   inv_details: { type: [InvoiceDetailSchema], required: true },
   shipping_address: { type: AddressSchema, required: true },
-  billing_address: { type: AddressSchema, required: true }
+  billing_address: { type: AddressSchema, required: true },
+  source: { type: String, required: true },
+  payment_status: { type: String, required: true },
 }, {
   timestamps: true
 });

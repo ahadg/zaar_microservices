@@ -72,6 +72,10 @@ func webhookHandler(w http.ResponseWriter, r *http.Request) {
 		// No payload expected
 		go SaveLogsToMongo(jsonData, requestedTopic)
 		go publishToKafka(requestedTopic, string(orderNum))
+	case "order-cancelled":
+		// No payload expected
+		go SaveLogsToMongo(jsonData, requestedTopic)
+		go publishToKafka(requestedTopic, string(orderNum))
 
 	default:
 		log.Printf("Unhandled topic: %s", requestedTopic)
@@ -95,12 +99,19 @@ func publishToKafka(targetTopic, message string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	log.Printf("Publishing to Kafka topic %s: %s", targetTopic, message)
+	payload := map[string]string{
+		"object_number": message,
+	}
+	// Encode to JSON
+	jsonValue, _ := json.Marshal(payload)
+
 	err := writer.WriteMessages(ctx,
 		kafka.Message{
 			Key:   []byte(fmt.Sprintf("key-%d", time.Now().UnixNano())),
-			Value: []byte(message),
+			Value: jsonValue,
 		},
 	)
+
 	if err != nil {
 		log.Printf("Failed to publish to Kafka topic %s: %v", targetTopic, err)
 	} else {

@@ -1,10 +1,6 @@
 const objectModel = require('../models/objectModel');
 const Template = require('../models/Template');
-const PartOne = require('../models/PartOne');
-const PartTwo = require('../models/PartTwo');
-const PartThree = require('../models/PartThree');
-const { divideObject } = require('../utils/divider');
-const { generatePDF } = require('./pdfService');
+// const { generatePDF } = require('./pdfService');
 
 /**
  * Process logic that gets triggered when Kafka message is received
@@ -19,13 +15,7 @@ const processTriggeredByMessage = async (order_number) => {
     try {
       const template = await Template.findOne({ name: 'default' });
 
-      const { part1, part2, part3 } = divideObject(mainObj);
-
-      await PartOne.create(part1);
-      await PartTwo.create(part2);
-      await PartThree.create(part3);
-
-      const pdfPath = generatePDF(mainObj, template, `${mainObj.identifier}.pdf`);
+      // const pdfPath = generatePDF(mainObj, template, `${mainObj.identifier}.pdf`);
 
       results.push({
         status: 'success',

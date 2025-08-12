@@ -50,7 +50,7 @@ func SaveOrderToMongo(data map[string]interface{}, targetTopic string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	data["source"] = "zaar-platform"
-	data["status"] = "unprocessed"
+	data["status"] = "unpaid"
 	data["delivery_status"] = "pending"
 
 	res, err := orderCollection.InsertOne(ctx, data)

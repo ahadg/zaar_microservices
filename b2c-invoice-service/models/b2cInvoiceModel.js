@@ -1,60 +1,56 @@
 const mongoose = require('mongoose');
 
-const invoiceSchema = new mongoose.Schema({
-  billing_address1: { type: String, required: true },
-  billing_city: { type: String, required: true },
-  billing_country: { type: String, required: true },
-  billing_province: { type: String, required: true },
-  billing_zip: { type: Number, required: true },
+const AddressSchema = new mongoose.Schema({
+  address1: { type: String, required: true },
+  city: { type: String, required: true },
+  province: { type: String, required: true },
+  country: { type: String, required: true },
+  zip: { type: String, required: true }
+}, { _id: false });
 
-  create_date: { type: Date, required: true },
-  created_at: { type: Date, required: true },
-
-  currency: { type: String, required: true },
-
-  customer_address1: { type: String, required: true },
-  customer_city: { type: String, required: true },
-  customer_country: { type: String, required: true },
-  customer_email: { type: String, required: true },
-  customer_first_name: { type: String, required: true },
-  customer_id: { type: Number, required: true },
-  customer_last_name: { type: String, required: true },
-  customer_phone: { type: String, required: true },
-  customer_province: { type: String, required: true },
-  customer_zip: { type: Number, required: true },
-
-  due_date: { type: Date, required: true },
-
-  fulfillment_status: { type: String, required: true },
+const CustomerSchema = new mongoose.Schema({
   id: { type: Number, required: true },
+  first_name: { type: String, required: true },
+  last_name: { type: String, required: true },
+  email: { type: String, required: true },
+  phone: { type: String, required: true },
+  default_address: { type: AddressSchema, required: true }
+}, { _id: false });
+
+const InvoiceDetailSchema = new mongoose.Schema({
+  id: { type: Number, required: true },
+  title: { type: String, required: true },
+  variant_title: { type: String },
+  quantity: { type: Number, required: true },
+  price: { type: String, required: true },
+  tax_amount: { type: String, required: true },
+  tax_rate: { type: Number, required: true },
+  sku: { type: String },
+  product_id: { type: Number, required: true }
+}, { _id: false });
+
+const InvoiceSchema = new mongoose.Schema({
   inv_id: { type: String, required: true },
   order_number: { type: Number, required: true },
-
-  product_id: { type: Number, required: true },
-  product_price: { type: Number, required: true },
-  product_quantity: { type: Number, required: true },
-  product_sku: { type: String, required: true },
-  product_tax_amount: { type: Number, required: true },
-  product_tax_rate: { type: Number, required: true },
-  product_title: { type: String, required: true },
-  product_variant: { type: String, required: true },
-
-  shipping_address1: { type: String, required: true },
-  shipping_city: { type: String, required: true },
-  shipping_country: { type: String, required: true },
-  shipping_province: { type: String, required: true },
-  shipping_zip: { type: Number, required: true },
-
+  create_date: { type: Date, required: true },
+  due_date: { type: Date, required: true },
+  created_at: { type: Date, required: true },
+  updated_at: { type: Date, required: false },
   status: { type: String, required: true },
-
-  subtotal_price: { type: Number, required: true },
-  total_price: { type: Number, required: true },
-  total_tax: { type: Number, required: true },
-
+  currency: { type: String, required: false },
+  total_price: { type: String, required: false },
+  subtotal_price: { type: String, required: false },
+  total_tax: { type: String, required: false },
+  vendor_id: { type: String, required: true },
   vendor: { type: String, required: true },
-  vendor_id: { type: String, required: true }
+  customer: { type: CustomerSchema, required: true },
+  inv_details: { type: [InvoiceDetailSchema], required: true },
+  shipping_address: { type: AddressSchema, required: true },
+  billing_address: { type: AddressSchema, required: true },
+  source: { type: String, required: true },
+  payment_status: { type: String },
+}, {
+  timestamps: true
 });
 
-const Invoice = mongoose.model('Invoice', invoiceSchema);
-
-module.exports = Invoice;
+module.exports = mongoose.model('b2cinvoice', InvoiceSchema);
