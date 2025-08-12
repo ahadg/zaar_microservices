@@ -114,3 +114,17 @@ services:
       - PORT=3002
     volumes:
       - ./notification-service:/app
+
+
+  oracle-service:
+    build:
+      context: ./oracle-service
+      dockerfile: Dockerfile
+    container_name: oracle-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+    volumes:
+      - ./oracle-service:/app
+      - /app/node_modules

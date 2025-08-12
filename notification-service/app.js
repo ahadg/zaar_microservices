@@ -32,6 +32,7 @@ const initKafkaConsumer = async () => {
     eachMessage: async ({ topic, message }) => {
       const value = message.value.toString();
       const data = JSON.parse(value)
+      console.log("data",data)
       // {"invoiceId" : "INV-001"}
       if (topic === process.env.B2C_INVOICE_CREATED) {
         // Handle B2C invoice created event
